@@ -6,7 +6,7 @@ databases:
   - name: school-erp-db
     databaseName: school_erp
     user: erp
-    plan: free            # free Postgres (expires after 90 days on free tier)
+    plan: standard            # free Postgres (expires after 90 days on free tier)
 
 services:
   # ---------- Backend API (Node/Express) ----------
