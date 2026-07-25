@@ -1,0 +1,49 @@
+# Render Blueprint — one-click deploy of the whole stack.
+# In Render: New + → "Blueprint" → connect this repo. Render reads this file.
+# After the first deploy, run the DB setup once (see README / the deploy guide).
+
+databases:
+  - name: school-erp-db
+    databaseName: school_erp
+    user: erp
+    plan: free            # free Postgres (expires after 90 days on free tier)
+
+services:
+  # ---------- Backend API (Node/Express) ----------
+  - type: web
+    name: school-erp-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: school-erp-db
+          property: connectionString   # internal URL (no SSL needed)
+      - key: JWT_SECRET
+        generateValue: true            # Render generates a strong secret
+      - key: CLIENT_URL
+        sync: false                    # set to your frontend URL after it deploys
+      - key: PUBLIC_BASE_URL
+        sync: false                    # set to this backend's own URL
+
+  # ---------- Frontend (React static site) ----------
+  - type: web
+    name: school-erp-frontend
+    runtime: static
+    rootDir: frontend
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false                    # set to <backend-url>/api after backend deploys
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html       # SPA fallback for client-side routing
